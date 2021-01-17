@@ -9,11 +9,12 @@
 
 #include "DS18B20Node.hpp"
 
-DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, const int measurementInterval)
+DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, const int measurementInterval, const bool multiSensor)
     : SensorNode(id, name, "DS18B20"),
       _sensorPin(sensorPin),
       _measurementInterval(measurementInterval),
-      _lastMeasurement(0)
+      _lastMeasurement(0),
+      _multiSensor(multiSensor)
 {
   if (_sensorPin > DEFAULTPIN)
   {
@@ -23,6 +24,7 @@ DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, 
 
   asprintf(&_caption, cCaption, name, sensorPin);
 
+/*  Defer advertisements until setup function when we find out how many DS18B20 sensors are present
   advertise(cStatusTopic)
       .setDatatype("enum")
       .setFormat("error, ok");
@@ -30,38 +32,41 @@ DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, 
       .setDatatype("float")
       .setFormat("-55:125")
       .setUnit(cUnitDegrees);
+*/
 }
 
 void DS18B20Node::send()
 {
   printCaption();
 
-  if (DEVICE_DISCONNECTED_C == temperature)
-  {
-    Homie.getLogger() << cIndent << F("Error reading from Sensor") << endl;
-    sendError();
-  }
-  else
-  {
-    Homie.getLogger() << cIndent << F("Temperature: ") << temperature << " °C" << endl;
-    sendData();
+  for (int i = 0; i < _sensorFound; ++i) {
+    if (DEVICE_DISCONNECTED_C == temperatures[i])
+    {
+      Homie.getLogger() << cIndent << F("Error reading from Sensor ") << i << endl;
+      sendError(i);
+    }
+    else
+    {
+      Homie.getLogger() << cIndent << F("Temperature: ") << temperatures[i] << " °C from sensor " << i << endl;
+      sendData(i);
+    }
   }
 }
 
-void DS18B20Node::sendError()
+void DS18B20Node::sendError(int i = 0)
 {
   if (Homie.isConnected())
   {
-    setProperty(cStatusTopic).send("error");
+    setProperty(cStatusTopic + _sensorFound ? String(i) : "").send("error");
   }
 }
 
-void DS18B20Node::sendData()
+void DS18B20Node::sendData(int i = 0)
 {
   if (Homie.isConnected())
   {
     setProperty(cStatusTopic).send("ok");
-    setProperty(cTemperatureTopic).send(String(temperature));
+    setProperty(cTemperatureTopic + String(i)).send(String(temperatures[i]));
   }
 }
 
@@ -72,9 +77,10 @@ void DS18B20Node::loop()
     if ((millis() - _lastMeasurement >= _measurementInterval * 1000UL) || (_lastMeasurement == 0))
     {
       dallasTemp->requestTemperatures();
-      temperature = dallasTemp->getTempCByIndex(0);
-      fixRange(&temperature, cMinTemp, cMaxTemp);
-
+      for(int i = 0; i < _sensorFound; ++i) {
+        temperatures[i] = dallasTemp->getTempCByIndex(i);
+        fixRange(&temperature[i], cMinTemp, cMaxTemp);
+      }
       send();
 
       _lastMeasurement = millis();
@@ -97,8 +103,23 @@ void DS18B20Node::setup()
   if (dallasTemp)
   {
     dallasTemp->begin();
-    _sensorFound = (dallasTemp->getDS18Count() > 0);
+    _numSensors = dallasTemp->getDS18Count();
+    _sensorFound = (_numSensors > 0);
     Homie.getLogger() << cIndent << F("Found ") << dallasTemp->getDS18Count() << " sensors." << endl
                       << cIndent << F("Reading interval: ") << _measurementInterval << " s" << endl;
+    for(int i = 0; i < _sensorFound; ++i) {
+      advertise(cStatusTopic + String(i))
+          .setDatatype("enum")
+          .setFormat("error, ok");      
+      advertise(cTemperatureTopic + String(i))
+          .setDatatype("float")
+          .setFormat("-55:125")
+          .setUnit(cUnitDegrees);
+    }
+    if(!_sensorFound) {
+      advertise(cStatusTopic + String(i))
+          .setDatatype("enum")
+          .setFormat("error, ok"); 
+    }
   }
 }
