@@ -53,5 +53,5 @@ public:
                        const int sensorPin = DEFAULTPIN,
                        const int measurementInterval = MEASUREMENT_INTERVAL);
 
-  float getTemperature() const { return temperature; }
+  float getTemperature(int i = 0) const { return temperatures[i]; }
 };

@@ -9,12 +9,11 @@
 
 #include "DS18B20Node.hpp"
 
-DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, const int measurementInterval, const bool multiSensor)
+DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, const int measurementInterval)
     : SensorNode(id, name, "DS18B20"),
       _sensorPin(sensorPin),
       _measurementInterval(measurementInterval),
-      _lastMeasurement(0),
-      _multiSensor(multiSensor)
+      _lastMeasurement(0)
 {
   if (_sensorPin > DEFAULTPIN)
   {
@@ -53,7 +52,7 @@ void DS18B20Node::send()
   }
 }
 
-void DS18B20Node::sendError(int i = 0)
+void DS18B20Node::sendError(int i)
 {
   if (Homie.isConnected())
   {
@@ -61,7 +60,7 @@ void DS18B20Node::sendError(int i = 0)
   }
 }
 
-void DS18B20Node::sendData(int i = 0)
+void DS18B20Node::sendData(int i)
 {
   if (Homie.isConnected())
   {
@@ -79,7 +78,7 @@ void DS18B20Node::loop()
       dallasTemp->requestTemperatures();
       for(int i = 0; i < _sensorFound; ++i) {
         temperatures[i] = dallasTemp->getTempCByIndex(i);
-        fixRange(&temperature[i], cMinTemp, cMaxTemp);
+        fixRange(&temperatures[i], cMinTemp, cMaxTemp);
       }
       send();
 
@@ -108,16 +107,16 @@ void DS18B20Node::setup()
     Homie.getLogger() << cIndent << F("Found ") << dallasTemp->getDS18Count() << " sensors." << endl
                       << cIndent << F("Reading interval: ") << _measurementInterval << " s" << endl;
     for(int i = 0; i < _sensorFound; ++i) {
-      advertise(cStatusTopic + String(i))
+      advertise(cStatusTopic + i)
           .setDatatype("enum")
           .setFormat("error, ok");      
-      advertise(cTemperatureTopic + String(i))
+      advertise(cTemperatureTopic + i)
           .setDatatype("float")
           .setFormat("-55:125")
           .setUnit(cUnitDegrees);
     }
     if(!_sensorFound) {
-      advertise(cStatusTopic + String(i))
+      advertise(cStatusTopic)
           .setDatatype("enum")
           .setFormat("error, ok"); 
     }
