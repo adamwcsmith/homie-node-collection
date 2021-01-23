@@ -9,11 +9,13 @@
 
 #include "DS18B20Node.hpp"
 
-DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, const int measurementInterval)
+DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, 
+                          const int measurementInterval, const bool useCelsius)
     : SensorNode(id, name, "DS18B20"),
       _sensorPin(sensorPin),
       _measurementInterval(measurementInterval),
-      _lastMeasurement(0)
+      _lastMeasurement(0),
+      _useCelsius(useCelsius)
 {
   if (_sensorPin > DEFAULTPIN)
   {
@@ -67,8 +69,8 @@ void DS18B20Node::loop()
     {
       dallasTemp->requestTemperatures();
       for(int i = 0; i < _numSensors; ++i) {
-        temperatures[i] = dallasTemp->getTempCByIndex(i);
-        fixRange(&temperatures[i], cMinTemp, cMaxTemp);
+        temperatures[i] = (_useCelsius ? dallasTemp->getTempCByIndex(i) : dallasTemp->getTempFByIndex(i));
+        fixRange(&temperatures[i], (_useCelsius ? cMinTempC : cMinTempF), (_useCelsius ? cMaxTempC : cMaxTempF));
       }
       send();
 
@@ -114,8 +116,8 @@ void DS18B20Node::setup()
         Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << endl;
         advertise((String(cTemperatureTopic) + String(numStr)).c_str() )
           .setDatatype("float")
-          .setFormat("-55:125")
-          .setUnit(cUnitDegrees);
+          .setFormat((String(_useCelsius ? cMinTempC : cMinTempF) + String(":") + String(_useCelsius ? cMaxTempC : cMaxTempF)).c_str())
+          .setUnit(_useCelsius ? cUnitDegreesC : cUnitDegreesF);
       }
     }
   }

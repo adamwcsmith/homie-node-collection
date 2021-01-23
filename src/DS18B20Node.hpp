@@ -20,9 +20,13 @@
 class DS18B20Node : public SensorNode
 {
 private:
-  const float cMinTemp = -55.0;
-  const float cMaxTemp = 125.0;
+  const float cMinTempC = -55.0;
+  const float cMaxTempC = 125.0;
+  const flaot cMinTempF = -67.0;
+  const float cMaxTempF = 257.0;
   const char *cCaption = "• %s DS18B20 pin[%d]:";
+
+  bool _useCelsius = true;
 
   int _sensorPin = DEFAULTPIN;
   bool _sensorFound = false;
@@ -48,7 +52,8 @@ public:
   explicit DS18B20Node(const char *id,
                        const char *name,
                        const int sensorPin = DEFAULTPIN,
-                       const int measurementInterval = MEASUREMENT_INTERVAL);
+                       const int measurementInterval = MEASUREMENT_INTERVAL,
+                       const bool useCelsius = true);
 
   float getTemperature(int i = 0) const { return temperatures[i]; }
 };
