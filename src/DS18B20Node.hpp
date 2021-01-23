@@ -22,7 +22,7 @@ class DS18B20Node : public SensorNode
 private:
   const float cMinTempC = -55.0;
   const float cMaxTempC = 125.0;
-  const flaot cMinTempF = -67.0;
+  const float cMinTempF = -67.0;
   const float cMaxTempF = 257.0;
   const char *cCaption = "• %s DS18B20 pin[%d]:";
 
