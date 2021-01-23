@@ -24,15 +24,12 @@ private:
   const float cMaxTemp = 125.0;
   const char *cCaption = "• %s DS18B20 pin[%d]:";
 
-  const bool _multiSensor = false;
-
   int _sensorPin = DEFAULTPIN;
   bool _sensorFound = false;
   int _numSensors = 0;
   unsigned long _measurementInterval;
   unsigned long _lastMeasurement;
 
-/*  float temperature = NAN;  replace with array to support multiple temps*/
   float *temperatures;
 
   OneWire *oneWire;
