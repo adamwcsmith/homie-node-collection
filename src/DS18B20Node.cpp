@@ -99,7 +99,7 @@ void DS18B20Node::setup()
                       << cIndent << F("Reading interval: ") << _measurementInterval << " s" << endl;
     char numStr[5] = "0"; // don't connect more than 9999 sensors
     if(!_sensorFound) {
-      Homie.getLogger() << F("No senseors found! Advertising only ") << cStatusTopic << endl;
+      Homie.getLogger() << F("No sensors found! Advertising only ") << cStatusTopic << endl;
       advertise(cStatusTopic)
           .setDatatype("enum")
           .setFormat("error, ok"); 
