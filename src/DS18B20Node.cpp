@@ -113,10 +113,13 @@ void DS18B20Node::setup()
           .setDatatype("enum")
           .setFormat("error, ok");      
 
-        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << endl;
+        String formatString((_useCelsius ? String(cMinTempC) : String(cMinTempF)) + String(":") + (_useCelsius ? String(cMaxTempC) : String(cMaxTempF)));
+
+        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << "with unit " << (_useCelsius ? cUnitDegreesC : cUnitDegreesF)
+                          << " and format " << formatString <<  endl;
         advertise((String(cTemperatureTopic) + String(numStr)).c_str() )
           .setDatatype("float")
-          .setFormat((String(_useCelsius ? cMinTempC : cMinTempF) + String(":") + String(_useCelsius ? cMaxTempC : cMaxTempF)).c_str())
+          .setFormat(formatString.c_str())
           .setUnit(_useCelsius ? cUnitDegreesC : cUnitDegreesF);
       }
     }
