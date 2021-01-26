@@ -1,4 +1,5 @@
 // Units
+#define cUnitDegrees "°C"
 #define cUnitDegreesC "°C"
 #define cUnitDegreesF "°F"
 #define cUnitHpa "hPa"

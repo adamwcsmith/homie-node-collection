@@ -26,13 +26,12 @@ private:
   const float cMaxTempF = 257.0;
   const char *cCaption = "• %s DS18B20 pin[%d]:";
 
-  bool _useCelsius = true;
-
   int _sensorPin = DEFAULTPIN;
   bool _sensorFound = false;
   int _numSensors = 0;
   unsigned long _measurementInterval;
   unsigned long _lastMeasurement;
+  bool _useCelsius = true;
 
   float *temperatures;
 
