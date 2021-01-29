@@ -115,7 +115,7 @@ void DS18B20Node::setup()
 
         String formatString((_useCelsius ? String(cMinTempC) : String(cMinTempF)) + String(":") + (_useCelsius ? String(cMaxTempC) : String(cMaxTempF)));
 
-        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << "with unit " << (_useCelsius ? cUnitDegreesC : cUnitDegreesF)
+        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << " with unit " << (_useCelsius ? cUnitDegreesC : cUnitDegreesF)
                           << " and format " << formatString <<  endl;
         advertise((String(cTemperatureTopic) + String(numStr)).c_str() )
           .setDatatype("float")
