@@ -38,7 +38,8 @@ void DS18B20Node::send()
     }
     else
     {
-      Homie.getLogger() << cIndent << F("Temperature: ") << temperatures[i] << " °C from sensor " << i << endl;
+      Homie.getLogger() << cIndent << F("Temperature: ") << temperatures[i] << F(" ")
+                                   << (_useCelsius ? cUnitDegreesC : cUnitDegreesF) << " from sensor " << i << endl;
       sendData(i);
     }
   }
