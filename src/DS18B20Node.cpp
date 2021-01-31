@@ -106,21 +106,20 @@ void DS18B20Node::setup()
       advertise(cStatusTopic)
           .setDatatype("enum")
           .setFormat("error, ok"); 
-    } else {
+    } else {  // _sensorFound == true
+      String formatString(String(_useCelsius ? cMinTempC : cMinTempF) + String(":") + String(_useCelsius ? cMaxTempC : cMaxTempF));
       for(int i = 0; i < _numSensors; ++i) {
         itoa(i, numStr, 10);
         Homie.getLogger() << F("advertising ") << cStatusTopic << numStr << endl;
-        advertise((String(cStatusTopic) + String(numStr)).c_str() )
+        advertise( strdup((String(cStatusTopic) + String(numStr)).c_str()) )
           .setDatatype("enum")
           .setFormat("error, ok");      
 
-        String formatString((_useCelsius ? String(cMinTempC) : String(cMinTempF)) + String(":") + (_useCelsius ? String(cMaxTempC) : String(cMaxTempF)));
-
         Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << " with unit " << (_useCelsius ? cUnitDegreesC : cUnitDegreesF)
-                          << " and format " << formatString <<  endl;
-        advertise((String(cTemperatureTopic) + String(numStr)).c_str() )
+                          << " and format " << formatString.c_str() <<  endl;
+        advertise( strdup((String(cTemperatureTopic) + String(numStr)).c_str()) )
           .setDatatype("float")
-          .setFormat(formatString.c_str())
+          .setFormat(strdup(formatString.c_str()))
           .setUnit(_useCelsius ? cUnitDegreesC : cUnitDegreesF);
       }
     }
