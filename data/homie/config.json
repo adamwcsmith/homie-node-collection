@@ -1,0 +1,30 @@
+{
+    "name": "Homie Floor Radiant ESP-01",
+    "device_id": "homie-esp01-radiantfloor",
+    "device_stats_interval": 300,
+    "wifi": {
+      "ssid": "maxwell",
+      "password": "rememberthis5647382910"
+    },
+    "mqtt": {
+      "host": "192.168.4.92",
+      "port": 1883,
+      "base_topic": "homie/",
+      "auth": true,
+      "username": "test",
+      "password": "test"
+    },
+    "ota": {
+      "enabled": true,
+      "host": "192.168.4.92",
+      "port": 9080,
+      "path": "/ota",
+      "auth": false
+    },
+    "settings": {
+      "enableSensors": "true",
+      "reportInterval": 60
+    }
+  }
+
+  
