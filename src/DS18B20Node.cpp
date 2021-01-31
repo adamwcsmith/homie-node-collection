@@ -10,12 +10,11 @@
 #include "DS18B20Node.hpp"
 
 DS18B20Node::DS18B20Node(const char *id, const char *name, const int sensorPin, 
-                          const int measurementInterval, const bool useCelsius)
+                          const int measurementInterval)
     : SensorNode(id, name, "DS18B20"),
       _sensorPin(sensorPin),
       _measurementInterval(measurementInterval),
-      _lastMeasurement(0),
-      _useCelsius(useCelsius)
+      _lastMeasurement(0)
 {
   if (_sensorPin > DEFAULTPIN)
   {
@@ -31,7 +30,7 @@ void DS18B20Node::send()
   printCaption();
 
   for (int i = 0; i < _numSensors; ++i) {
-    if (DEVICE_DISCONNECTED_C == temperatures[i])
+    if (temperatures[i] == (_cUseCelsius ? DEVICE_DISCONNECTED_C : DEVICE_DISCONNECTED_F))
     {
       Homie.getLogger() << cIndent << F("Error reading from Sensor ") << i << endl;
       sendError(i);
@@ -39,7 +38,7 @@ void DS18B20Node::send()
     else
     {
       Homie.getLogger() << cIndent << F("Temperature: ") << temperatures[i] << F(" ")
-                                   << (_useCelsius ? cUnitDegreesC : cUnitDegreesF) << " from sensor " << i << endl;
+                                   << (_cUseCelsius ? cUnitDegreesC : cUnitDegreesF) << " from sensor " << i << endl;
       sendData(i);
     }
   }
@@ -49,7 +48,7 @@ void DS18B20Node::sendError(int i)
 {  
   if (Homie.isConnected())
   {
-    setProperty(cStatusTopic + (_sensorFound ? String(i) : String(""))).send("error");
+    setProperty(cStatusTopic + (_cMultiSensor ? String(i) : String(""))).send("error");
   }
 }
 
@@ -57,7 +56,7 @@ void DS18B20Node::sendData(int i)
 {
   if (Homie.isConnected())
   {
-    setProperty(cStatusTopic + (_sensorFound ? String(i) : String(""))).send("ok");
+    setProperty(cStatusTopic + (_cMultiSensor ? String(i) : String(""))).send("ok");
     setProperty(cTemperatureTopic + String(i)).send(String(temperatures[i]));
   }
 }
@@ -70,8 +69,8 @@ void DS18B20Node::loop()
     {
       dallasTemp->requestTemperatures();
       for(int i = 0; i < _numSensors; ++i) {
-        temperatures[i] = (_useCelsius ? dallasTemp->getTempCByIndex(i) : dallasTemp->getTempFByIndex(i));
-        fixRange(&temperatures[i], (_useCelsius ? cMinTempC : cMinTempF), (_useCelsius ? cMaxTempC : cMaxTempF));
+        temperatures[i] = (_cUseCelsius ? dallasTemp->getTempCByIndex(i) : dallasTemp->getTempFByIndex(i));
+        fixRange(&temperatures[i], (_cUseCelsius ? cMinTempC : cMinTempF), (_cUseCelsius ? cMaxTempC : cMaxTempF));
       }
       send();
 
@@ -96,31 +95,33 @@ void DS18B20Node::setup()
   {
     dallasTemp->begin();
     _numSensors = dallasTemp->getDS18Count();
-    _sensorFound = (_numSensors > 0);
-    temperatures = new float[_numSensors];
-    Homie.getLogger() << cIndent << F("Found ") << _numSensors << " sensors." << endl
-                      << cIndent << F("Reading interval: ") << _measurementInterval << " s" << endl;
-    char numStr[5] = "0"; // don't connect more than 9999 sensors
+    if(_numSensors > 0) {
+      _sensorFound = true;
+      if(!_cMultiSensor) { _numSensors = 1; }  // limit to one sensor unless DS18B20_MULTISENSOR has been defined
+    };
     if(!_sensorFound) {
-      Homie.getLogger() << F("No sensors found! Advertising only ") << cStatusTopic << endl;
+      Homie.getLogger() << F("No sensors found! Advertising just status topic ") << cStatusTopic << endl;
       advertise(cStatusTopic)
           .setDatatype("enum")
           .setFormat("error, ok"); 
-    } else {  // _sensorFound == true
-      String formatString(String(_useCelsius ? cMinTempC : cMinTempF) + String(":") + String(_useCelsius ? cMaxTempC : cMaxTempF));
+     } else {  // _sensorFound == true
+      Homie.getLogger() << cIndent << F("Found ") << _numSensors << F(" sensors.") 
+                        << ( _cMultiSensor ? F("") : F(" (Use #define DS18B20_MULTISENSOR to allow multiple sensors)") ) << endl
+                        << cIndent << F("Reading interval: ") << _measurementInterval << F(" s") << endl;
+      temperatures = new float[_numSensors];
+      char numStr[5] = ""; // don't connect more than 9999 sensors.  Note, null string used below when not in multisensor mode.
       for(int i = 0; i < _numSensors; ++i) {
-        itoa(i, numStr, 10);
+        if(_cMultiSensor) { itoa(i, numStr, 10); }   // if not supporting multiple sensors, leave as null for bare status topic
         Homie.getLogger() << F("advertising ") << cStatusTopic << numStr << endl;
         advertise( strdup((String(cStatusTopic) + String(numStr)).c_str()) )
           .setDatatype("enum")
           .setFormat("error, ok");      
-
-        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << " with unit " << (_useCelsius ? cUnitDegreesC : cUnitDegreesF)
-                          << " and format " << formatString.c_str() <<  endl;
+        Homie.getLogger() << F("advertising ") << cTemperatureTopic << numStr << F(" with unit ") << (_cUseCelsius ? cUnitDegreesC : cUnitDegreesF)
+                          << F(" and format ") << (_cUseCelsius ? cFormatC : cFormatF) <<  endl;
         advertise( strdup((String(cTemperatureTopic) + String(numStr)).c_str()) )
           .setDatatype("float")
-          .setFormat(strdup(formatString.c_str()))
-          .setUnit(_useCelsius ? cUnitDegreesC : cUnitDegreesF);
+          .setFormat( (_cUseCelsius ? cFormatC : cFormatF) )
+          .setUnit(_cUseCelsius ? cUnitDegreesC : cUnitDegreesF);
       }
     }
   }
