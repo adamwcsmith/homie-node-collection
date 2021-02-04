@@ -44,7 +44,8 @@ private:
   unsigned long _measurementInterval;
   unsigned long _lastMeasurement;
 
-  float *temperatures;
+  float *temperatures;      // will be allocated in setup() as an array[_numSensors]
+  String *addresses;        // will be allocated in setup() as an array[_numSensors]
 
   OneWire *oneWire;
   DallasTemperature *dallasTemp;
@@ -63,6 +64,8 @@ public:
                        const char *name,
                        const int sensorPin = DEFAULTPIN,
                        const int measurementInterval = MEASUREMENT_INTERVAL);
+
+  ~DS18B20Node();
 
   float getTemperature(int i = 0) const { return temperatures[i]; }
 };
